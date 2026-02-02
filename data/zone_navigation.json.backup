@@ -1,0 +1,122 @@
+{
+  "zone_connections": {
+    "1": [
+      {
+        "from_zone": "1",
+        "to_zone": "2",
+        "direction": "north",
+        "connection_id": "40",
+        "is_active": true
+      }
+    ],
+    "2": [
+      {
+        "from_zone": "2",
+        "to_zone": "3",
+        "direction": "east",
+        "connection_id": "41",
+        "is_active": true
+      },
+      {
+        "from_zone": "2",
+        "to_zone": "1",
+        "direction": "south",
+        "connection_id": "43",
+        "is_active": true
+      }
+    ],
+    "3": [
+      {
+        "from_zone": "3",
+        "to_zone": "2",
+        "direction": "west",
+        "connection_id": "42",
+        "is_active": true
+      }
+    ]
+  },
+  "device_states": {
+    "test_robot": {
+      "current_zone": "A",
+      "locked_direction": "north",
+      "target_zone": "B",
+      "lock_timestamp": 1758540919.7372947,
+      "turn_type": "left",
+      "device_id": "test_robot",
+      "is_transitioning": true
+    },
+    "direction_test_robot": {
+      "current_zone": "CENTER",
+      "locked_direction": "south",
+      "target_zone": "S",
+      "lock_timestamp": 1758540919.9201107,
+      "turn_type": "left",
+      "device_id": "direction_test_robot",
+      "is_transitioning": true
+    },
+    "rules_test_robot": {
+      "current_zone": "START",
+      "locked_direction": null,
+      "target_zone": null,
+      "lock_timestamp": null,
+      "turn_type": null,
+      "device_id": "rules_test_robot",
+      "is_transitioning": false
+    },
+    "pp111": {
+      "current_zone": "21",
+      "locked_direction": "north",
+      "target_zone": "22",
+      "lock_timestamp": 1758541466.208981,
+      "turn_type": "left",
+      "device_id": "pp111",
+      "is_transitioning": true
+    },
+    "d11": {
+      "current_zone": "4",
+      "locked_direction": "west",
+      "target_zone": "9",
+      "lock_timestamp": 1758541540.9832675,
+      "turn_type": "left",
+      "device_id": "d11",
+      "is_transitioning": true
+    },
+    "ppp11": {
+      "current_zone": "9",
+      "locked_direction": "north",
+      "target_zone": "11",
+      "lock_timestamp": 1758543754.983969,
+      "turn_type": "right",
+      "device_id": "ppp11",
+      "is_transitioning": true
+    },
+    "dev1": {
+      "current_zone": "2",
+      "locked_direction": "east",
+      "target_zone": "3",
+      "lock_timestamp": 1758625222.3205247,
+      "turn_type": "right",
+      "device_id": "dev1",
+      "is_transitioning": true
+    },
+    "dv1": {
+      "current_zone": "3",
+      "locked_direction": "east",
+      "target_zone": "3",
+      "lock_timestamp": 1758626299.3386993,
+      "turn_type": "right",
+      "device_id": "dv1",
+      "is_transitioning": false
+    },
+    "dv11": {
+      "current_zone": "2",
+      "locked_direction": "south",
+      "target_zone": "1",
+      "lock_timestamp": 1758696411.7648656,
+      "turn_type": "right",
+      "device_id": "dv11",
+      "is_transitioning": true
+    }
+  },
+  "last_saved": 1758696415.0425978
+}

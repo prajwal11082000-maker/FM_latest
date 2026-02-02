@@ -1,0 +1,1 @@
+id,task_id,task_name,task_type,status,assigned_device_id,assigned_device_ids,assigned_user_id,description,estimated_duration,actual_duration,created_at,started_at,completed_at,map_id,zone_ids,stop_ids,task_details

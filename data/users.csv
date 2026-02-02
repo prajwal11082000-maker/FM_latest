@@ -1,0 +1,13 @@
+id,username,email,employee_id,profile_picture,is_active,created_at
+1,jsmith,john.smith@warehouse.com,EMP001,,true,2025-01-10T09:00:00
+2,mjohnson,maria.johnson@warehouse.com,EMP002,,true,2025-01-10T09:15:00
+3,dwilson,david.wilson@warehouse.com,EMP003,,true,2025-01-10T09:30:00
+4,sbrown,sarah.brown@warehouse.com,EMP004,,true,2025-01-10T09:45:00
+5,rlee,robert.lee@warehouse.com,EMP005,,true,2025-01-11T08:00:00
+6,kgarcia,karen.garcia@warehouse.com,EMP006,,false,2025-01-11T08:15:00
+7,mrodriguez,miguel.rodriguez@warehouse.com,EMP007,,true,2025-01-11T08:30:00
+8,awong,amy.wong@warehouse.com,EMP008,,true,2025-01-12T10:00:00
+9,jchen,james.chen@warehouse.com,EMP009,,true,2025-01-12T10:15:00
+10,lthompson,lisa.thompson@warehouse.com,EMP010,,false,2025-01-12T10:30:00
+11,nitin,nitin@company.com,123321,,true,2025-08-11T13:14:49.116872
+12,Prajwal K,prajwal@gmail.com,EMP2000,C:/Users/demog/Pictures/Screenshots/Screenshot 2025-08-18 112040.png,true,2025-08-21T12:29:31.741567

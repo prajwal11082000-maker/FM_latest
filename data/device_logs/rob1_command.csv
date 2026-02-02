@@ -1,0 +1,2 @@
+command,params,timestamp
+ROTATE_ANGLE,"{""angle"": 1.0, ""velocity"": 300, ""acceleration"": 5000, ""deceleration"": 5000}",2026-02-02 13:27:54.323

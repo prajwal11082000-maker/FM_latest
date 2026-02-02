@@ -1,0 +1,6 @@
+PyQt5
+requests
+pandas
+python-dateutil
+numpy
+api

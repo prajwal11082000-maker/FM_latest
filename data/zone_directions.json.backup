@@ -1,0 +1,525 @@
+{
+  "device_zone_states": {
+    "robot_001": {
+      "2": {
+        "zone_id": 2,
+        "active_direction": "east",
+        "turn_type": "right",
+        "locked_at": 1758367625.026065,
+        "locked_by_device": "robot_001",
+        "last_updated": 1758367625.0260658
+      }
+    },
+    "test": {
+      "1": {
+        "zone_id": 1,
+        "active_direction": "east",
+        "turn_type": "right",
+        "locked_at": 1758367736.222954,
+        "locked_by_device": "test",
+        "last_updated": 1758367736.2229548
+      }
+    },
+    "TEST_ROBOT": {
+      "3": {
+        "zone_id": 3,
+        "active_direction": "north",
+        "turn_type": "left",
+        "locked_at": 1758367881.3016572,
+        "locked_by_device": "TEST_ROBOT",
+        "last_updated": 1758367881.3033853
+      }
+    },
+    "TEST_ROBOT_2": {
+      "1": {
+        "zone_id": 1,
+        "active_direction": "east",
+        "turn_type": "right",
+        "locked_at": 1758367881.3251648,
+        "locked_by_device": "TEST_ROBOT_2",
+        "last_updated": 1758367881.328716
+      },
+      "2": {
+        "zone_id": 2,
+        "active_direction": "west",
+        "turn_type": "left",
+        "locked_at": 1758367881.3269403,
+        "locked_by_device": "TEST_ROBOT_2",
+        "last_updated": 1758367881.33015
+      }
+    },
+    "ZONE_TEST_DEVICE": {
+      "2": {
+        "zone_id": 2,
+        "active_direction": "south",
+        "turn_type": "right",
+        "locked_at": 1758367881.452069,
+        "locked_by_device": "ZONE_TEST_DEVICE",
+        "last_updated": 1758367881.4738123
+      },
+      "3": {
+        "zone_id": 3,
+        "active_direction": null,
+        "turn_type": null,
+        "locked_at": null,
+        "locked_by_device": null,
+        "last_updated": 1758367881.4982748
+      }
+    },
+    "OVERRIDE_TEST": {
+      "4": {
+        "zone_id": 4,
+        "active_direction": "east",
+        "turn_type": "right",
+        "locked_at": 1758367881.519657,
+        "locked_by_device": "OVERRIDE_TEST",
+        "last_updated": 1758367881.5281606
+      }
+    },
+    "p11": {
+      "2": {
+        "zone_id": 2,
+        "active_direction": "east",
+        "turn_type": "left",
+        "locked_at": 1758439003.5060806,
+        "locked_by_device": "p11",
+        "last_updated": 1758439308.840151
+      },
+      "1": {
+        "zone_id": 1,
+        "active_direction": null,
+        "turn_type": null,
+        "locked_at": null,
+        "locked_by_device": null,
+        "last_updated": 1758439158.777429
+      },
+      "4": {
+        "zone_id": 4,
+        "active_direction": "west",
+        "turn_type": "right",
+        "locked_at": 1758441622.9248376,
+        "locked_by_device": "p11",
+        "last_updated": 1758441646.5511441
+      },
+      "9": {
+        "zone_id": 9,
+        "active_direction": "east",
+        "turn_type": "left",
+        "locked_at": 1758439610.0627236,
+        "locked_by_device": "p11",
+        "last_updated": 1758537208.269675
+      }
+    },
+    "m1": {
+      "4": {
+        "zone_id": 4,
+        "active_direction": null,
+        "turn_type": null,
+        "locked_at": null,
+        "locked_by_device": null,
+        "last_updated": null
+      }
+    },
+    "dv1": {
+      "5": {
+        "zone_id": 5,
+        "active_direction": null,
+        "turn_type": null,
+        "locked_at": null,
+        "locked_by_device": null,
+        "last_updated": null
+      },
+      "1": {
+        "zone_id": 1,
+        "active_direction": null,
+        "turn_type": null,
+        "locked_at": null,
+        "locked_by_device": null,
+        "last_updated": 1758625256.344404
+      },
+      "2": {
+        "zone_id": 2,
+        "active_direction": "south",
+        "turn_type": "right",
+        "locked_at": 1758626303.3358557,
+        "locked_by_device": "dv1",
+        "last_updated": 1758626308.344223
+      },
+      "3": {
+        "zone_id": 3,
+        "active_direction": null,
+        "turn_type": null,
+        "locked_at": null,
+        "locked_by_device": null,
+        "last_updated": 1758696247.6754005
+      }
+    },
+    "test_robot": {
+      "1": {
+        "zone_id": 1,
+        "active_direction": "east",
+        "turn_type": "right",
+        "locked_at": 1758441224.617993,
+        "locked_by_device": "test_robot",
+        "last_updated": 1758441224.6179945
+      },
+      "2": {
+        "zone_id": 2,
+        "active_direction": "west",
+        "turn_type": "left",
+        "locked_at": 1758441224.6206317,
+        "locked_by_device": "test_robot",
+        "last_updated": 1758441224.620633
+      },
+      "3": {
+        "zone_id": 3,
+        "active_direction": null,
+        "turn_type": null,
+        "locked_at": null,
+        "locked_by_device": null,
+        "last_updated": 1758441224.622807
+      }
+    },
+    "clockwise_robot": {
+      "10": {
+        "zone_id": 10,
+        "active_direction": "east",
+        "turn_type": "right",
+        "locked_at": 1758441224.645531,
+        "locked_by_device": "clockwise_robot",
+        "last_updated": 1758441224.645532
+      },
+      "11": {
+        "zone_id": 11,
+        "active_direction": "south",
+        "turn_type": "right",
+        "locked_at": 1758441224.6515322,
+        "locked_by_device": "clockwise_robot",
+        "last_updated": 1758441224.6515338
+      },
+      "12": {
+        "zone_id": 12,
+        "active_direction": "west",
+        "turn_type": "right",
+        "locked_at": 1758441224.655486,
+        "locked_by_device": "clockwise_robot",
+        "last_updated": 1758441224.655487
+      },
+      "13": {
+        "zone_id": 13,
+        "active_direction": "north",
+        "turn_type": "right",
+        "locked_at": 1758441224.66161,
+        "locked_by_device": "clockwise_robot",
+        "last_updated": 1758441224.661611
+      }
+    },
+    "counter_clockwise_robot": {
+      "20": {
+        "zone_id": 20,
+        "active_direction": "west",
+        "turn_type": "left",
+        "locked_at": 1758441224.6838677,
+        "locked_by_device": "counter_clockwise_robot",
+        "last_updated": 1758441224.6838686
+      },
+      "21": {
+        "zone_id": 21,
+        "active_direction": "south",
+        "turn_type": "left",
+        "locked_at": 1758441224.6889224,
+        "locked_by_device": "counter_clockwise_robot",
+        "last_updated": 1758441224.6889231
+      },
+      "22": {
+        "zone_id": 22,
+        "active_direction": "east",
+        "turn_type": "left",
+        "locked_at": 1758441224.693906,
+        "locked_by_device": "counter_clockwise_robot",
+        "last_updated": 1758441224.693907
+      },
+      "23": {
+        "zone_id": 23,
+        "active_direction": "north",
+        "turn_type": "left",
+        "locked_at": 1758441224.7016466,
+        "locked_by_device": "counter_clockwise_robot",
+        "last_updated": 1758441224.7016473
+      }
+    },
+    "continuation_robot": {
+      "30": {
+        "zone_id": 30,
+        "active_direction": "north",
+        "turn_type": "test_setup",
+        "locked_at": 1758441224.722866,
+        "locked_by_device": "continuation_robot",
+        "last_updated": 1758441224.7252195
+      },
+      "31": {
+        "zone_id": 31,
+        "active_direction": "south",
+        "turn_type": "test_setup",
+        "locked_at": 1758441224.727569,
+        "locked_by_device": "continuation_robot",
+        "last_updated": 1758441224.7329993
+      },
+      "32": {
+        "zone_id": 32,
+        "active_direction": "east",
+        "turn_type": "test_setup",
+        "locked_at": 1758441224.7357774,
+        "locked_by_device": "continuation_robot",
+        "last_updated": 1758441224.7380135
+      },
+      "33": {
+        "zone_id": 33,
+        "active_direction": "west",
+        "turn_type": "test_setup",
+        "locked_at": 1758441224.7410145,
+        "locked_by_device": "continuation_robot",
+        "last_updated": 1758441224.7440932
+      }
+    },
+    "inheritance_robot": {
+      "40": {
+        "zone_id": 40,
+        "active_direction": "west",
+        "turn_type": "test_setup",
+        "locked_at": 1758441224.7608836,
+        "locked_by_device": "inheritance_robot",
+        "last_updated": 1758441224.7608843
+      },
+      "41": {
+        "zone_id": 41,
+        "active_direction": "west",
+        "turn_type": "inherited",
+        "locked_at": 1758441224.765194,
+        "locked_by_device": "inheritance_robot",
+        "last_updated": 1758441224.7651944
+      }
+    },
+    "demo_robot": {
+      "1": {
+        "zone_id": 1,
+        "active_direction": "east",
+        "turn_type": "right",
+        "locked_at": 1758441324.1964288,
+        "locked_by_device": "demo_robot",
+        "last_updated": 1758441324.19643
+      },
+      "2": {
+        "zone_id": 2,
+        "active_direction": "west",
+        "turn_type": "left",
+        "locked_at": 1758441324.2092588,
+        "locked_by_device": "demo_robot",
+        "last_updated": 1758441324.2092597
+      },
+      "3": {
+        "zone_id": 3,
+        "active_direction": "south",
+        "turn_type": "demo_setup",
+        "locked_at": 1758441324.212673,
+        "locked_by_device": "demo_robot",
+        "last_updated": 1758441324.2147777
+      },
+      "10": {
+        "zone_id": 10,
+        "active_direction": "east",
+        "turn_type": "right",
+        "locked_at": 1758441324.2250607,
+        "locked_by_device": "demo_robot",
+        "last_updated": 1758441324.2250617
+      },
+      "11": {
+        "zone_id": 11,
+        "active_direction": "south",
+        "turn_type": "right",
+        "locked_at": 1758441324.2323174,
+        "locked_by_device": "demo_robot",
+        "last_updated": 1758441324.2323186
+      },
+      "12": {
+        "zone_id": 12,
+        "active_direction": "west",
+        "turn_type": "right",
+        "locked_at": 1758441324.2424366,
+        "locked_by_device": "demo_robot",
+        "last_updated": 1758441324.2424376
+      },
+      "13": {
+        "zone_id": 13,
+        "active_direction": "north",
+        "turn_type": "right",
+        "locked_at": 1758441324.2510915,
+        "locked_by_device": "demo_robot",
+        "last_updated": 1758441324.2510927
+      },
+      "20": {
+        "zone_id": 20,
+        "active_direction": "west",
+        "turn_type": "left",
+        "locked_at": 1758441324.2646556,
+        "locked_by_device": "demo_robot",
+        "last_updated": 1758441324.2646568
+      },
+      "21": {
+        "zone_id": 21,
+        "active_direction": "south",
+        "turn_type": "left",
+        "locked_at": 1758441324.2733078,
+        "locked_by_device": "demo_robot",
+        "last_updated": 1758441324.273309
+      },
+      "22": {
+        "zone_id": 22,
+        "active_direction": "east",
+        "turn_type": "left",
+        "locked_at": 1758441324.2834165,
+        "locked_by_device": "demo_robot",
+        "last_updated": 1758441324.2834177
+      },
+      "23": {
+        "zone_id": 23,
+        "active_direction": "north",
+        "turn_type": "left",
+        "locked_at": 1758441324.2934902,
+        "locked_by_device": "demo_robot",
+        "last_updated": 1758441324.2934911
+      }
+    },
+    "d11": {
+      "1": {
+        "zone_id": 1,
+        "active_direction": null,
+        "turn_type": null,
+        "locked_at": null,
+        "locked_by_device": null,
+        "last_updated": 1758537267.3746402
+      },
+      "2": {
+        "zone_id": 2,
+        "active_direction": "east",
+        "turn_type": "right",
+        "locked_at": 1758537360.4977098,
+        "locked_by_device": "d11",
+        "last_updated": 1758537384.4227128
+      },
+      "4": {
+        "zone_id": 4,
+        "active_direction": "south",
+        "turn_type": "left",
+        "locked_at": 1758541545.0214262,
+        "locked_by_device": "d11",
+        "last_updated": 1758541583.0419014
+      }
+    },
+    "pp111": {
+      "20": {
+        "zone_id": 20,
+        "active_direction": null,
+        "turn_type": null,
+        "locked_at": null,
+        "locked_by_device": null,
+        "last_updated": 1758537684.6409593
+      },
+      "21": {
+        "zone_id": 21,
+        "active_direction": "west",
+        "turn_type": "left",
+        "locked_at": 1758541469.9592166,
+        "locked_by_device": "pp111",
+        "last_updated": 1758543481.6007187
+      }
+    },
+    "ppp11": {
+      "1": {
+        "zone_id": 1,
+        "active_direction": null,
+        "turn_type": null,
+        "locked_at": null,
+        "locked_by_device": null,
+        "last_updated": 1758543517.6833014
+      },
+      "2": {
+        "zone_id": 2,
+        "active_direction": "south",
+        "turn_type": "right",
+        "locked_at": 1758543606.9231095,
+        "locked_by_device": "ppp11",
+        "last_updated": 1758543634.8196137
+      },
+      "4": {
+        "zone_id": 4,
+        "active_direction": "west",
+        "turn_type": "left",
+        "locked_at": 1758543654.86251,
+        "locked_by_device": "ppp11",
+        "last_updated": 1758543674.4737842
+      },
+      "9": {
+        "zone_id": 9,
+        "active_direction": "south",
+        "turn_type": "right",
+        "locked_at": 1758543758.9433641,
+        "locked_by_device": "ppp11",
+        "last_updated": 1758543890.6067913
+      }
+    },
+    "dev1": {
+      "1": {
+        "zone_id": 1,
+        "active_direction": null,
+        "turn_type": null,
+        "locked_at": null,
+        "locked_by_device": null,
+        "last_updated": 1758543946.7311819
+      },
+      "2": {
+        "zone_id": 2,
+        "active_direction": "west",
+        "turn_type": "right",
+        "locked_at": 1758625226.255484,
+        "locked_by_device": "dev1",
+        "last_updated": 1758625226.2554853
+      },
+      "4": {
+        "zone_id": 4,
+        "active_direction": null,
+        "turn_type": null,
+        "locked_at": null,
+        "locked_by_device": null,
+        "last_updated": 1758603830.9686399
+      },
+      "5": {
+        "zone_id": 5,
+        "active_direction": "west",
+        "turn_type": "left",
+        "locked_at": 1758604036.200421,
+        "locked_by_device": "dev1",
+        "last_updated": 1758604060.1821904
+      }
+    },
+    "dv11": {
+      "1": {
+        "zone_id": 1,
+        "active_direction": null,
+        "turn_type": null,
+        "locked_at": null,
+        "locked_by_device": null,
+        "last_updated": 1758696303.8050187
+      },
+      "2": {
+        "zone_id": 2,
+        "active_direction": "west",
+        "turn_type": "right",
+        "locked_at": 1758696415.031289,
+        "locked_by_device": "dv11",
+        "last_updated": 1758696415.0312908
+      }
+    }
+  },
+  "last_saved": 1758696415.0312984
+}
