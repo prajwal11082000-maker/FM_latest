@@ -438,6 +438,12 @@ def generate_path_commands(
                         # Ensure ALIGN is added before DROP if not already
                         if i >= len(zone_sequence) - 1:  # Last edge - need to add ALIGN first
                             cmds.append(_align_cmd(edge.to_zone))
+                        # First, insert CHECK so device will run check logic and wait if needed
+                        try:
+                            cmds.append(('CALL', 'CHECK'))
+                        except Exception:
+                            pass
+                        # Then perform DROP
                         cmds.append(('CALL', 'DROP'))
             except Exception:
                 pass
@@ -562,6 +568,25 @@ def serialize_commands_to_csv_rows(cmds: List[Tuple[Any, ...]], device_id: Optio
         if os.path.exists(pickup_logic_path):
             try:
                 with open(pickup_logic_path, 'r', newline='', encoding='utf-8') as f:
+                    for line in f:
+                        line = line.strip()
+                        if line:
+                            rows.append(line.split(','))
+            except Exception:
+                pass
+
+    rows.append(["RETURN"])
+    rows.append([])  # Blank line
+    rows.append(["LABEL", "CHECK"])
+
+    if device_id:
+        check_logic_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            "data", "device_logs", f"{device_id}_CHECK_Logic.csv"
+        )
+        if os.path.exists(check_logic_path):
+            try:
+                with open(check_logic_path, 'r', newline='', encoding='utf-8') as f:
                     for line in f:
                         line = line.strip()
                         if line:

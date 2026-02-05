@@ -3,4 +3,3 @@ requests
 pandas
 python-dateutil
 numpy
-api

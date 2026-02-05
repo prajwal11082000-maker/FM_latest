@@ -271,10 +271,10 @@ class TaskCreationWidget(QWidget):
         layout.addRow("Pickup Map *:", self.pickup_map_combo)
 
         # Pick Up Stops list (multi-select of all stops in the pickup map)
-        self.drop_stop_list = QListWidget()
-        self.drop_stop_list.setMinimumHeight(100)
-        self.drop_stop_list.setSelectionMode(QListWidget.MultiSelection)
-        self.drop_stop_list.setStyleSheet("""
+        self.pickup_stop_list = QListWidget()
+        self.pickup_stop_list.setMinimumHeight(100)
+        self.pickup_stop_list.setSelectionMode(QListWidget.MultiSelection)
+        self.pickup_stop_list.setStyleSheet("""
             QListWidget {
                 background-color: #404040;
                 border: 1px solid #555555;
@@ -292,7 +292,7 @@ class TaskCreationWidget(QWidget):
                 color: white;
             }
         """)
-        layout.addRow("Pick Up Stops *:", self.drop_stop_list)
+        layout.addRow("Pick Up Stops *:", self.pickup_stop_list)
 
         self.rack_list = QListWidget()
         self.rack_list.setMinimumHeight(100)
@@ -316,6 +316,20 @@ class TaskCreationWidget(QWidget):
             }
         """)
         layout.addRow("Rack IDs:", self.rack_list)
+
+        # Check Stops list (multi-select)
+        self.check_stop_list = QListWidget()
+        self.check_stop_list.setMinimumHeight(100)
+        self.check_stop_list.setSelectionMode(QListWidget.MultiSelection)
+        self.check_stop_list.setStyleSheet(self.pickup_stop_list.styleSheet())
+        layout.addRow("Check Stops *:", self.check_stop_list)
+
+        # Drop Stops list (multi-select)
+        self.drop_stop_list = QListWidget()
+        self.drop_stop_list.setMinimumHeight(100)
+        self.drop_stop_list.setSelectionMode(QListWidget.MultiSelection)
+        self.drop_stop_list.setStyleSheet(self.pickup_stop_list.styleSheet())
+        layout.addRow("Drop Stops *:", self.drop_stop_list)
 
         # Drop Zone dropdown (single-select of all zones in the pickup map)
         self.drop_zone_combo = QComboBox()
@@ -886,7 +900,7 @@ class TaskCreationWidget(QWidget):
                         self.required_distance = 0
                 elif task_type == 'picking':
                     # Get selected stops and drop zone for picking
-                    selected_stops = self.get_selected_stops_from_list(self.drop_stop_list) or []
+                    selected_stops = self.get_selected_stops_from_list(self.pickup_stop_list) or []
                     drop_zone = self.drop_zone_combo.currentData()
                     
                     # For picking, we approximate required distance using map distance with stops
@@ -906,8 +920,8 @@ class TaskCreationWidget(QWidget):
             
             # Filter devices using DeviceFilter
             selected_stops = []
-            if task_type == 'picking' and hasattr(self, 'drop_stop_list'):
-                selected_stops = self.get_selected_stops_from_list(self.drop_stop_list) or []
+            if task_type == 'picking' and hasattr(self, 'pickup_stop_list'):
+                selected_stops = self.get_selected_stops_from_list(self.pickup_stop_list) or []
 
             candidates = self.device_filter.filter_devices(
                 task_type=task_type,
@@ -1212,11 +1226,25 @@ class TaskCreationWidget(QWidget):
             has_map = hasattr(self, 'pickup_map_combo') and self.pickup_map_combo.currentIndex() > 0
             has_drop_zone = hasattr(self, 'drop_zone_combo') and self.drop_zone_combo.currentIndex() > 0
             has_pickup_stops = False
+            if hasattr(self, 'pickup_stop_list'):
+                for i in range(self.pickup_stop_list.count()):
+                    item = self.pickup_stop_list.item(i)
+                    if item and item.isSelected():
+                        has_pickup_stops = True
+                        break
+            has_check_stops = False
+            if hasattr(self, 'check_stop_list'):
+                for i in range(self.check_stop_list.count()):
+                    item = self.check_stop_list.item(i)
+                    if item and item.isSelected():
+                        has_check_stops = True
+                        break
+            has_drop_stops = False
             if hasattr(self, 'drop_stop_list'):
                 for i in range(self.drop_stop_list.count()):
                     item = self.drop_stop_list.item(i)
                     if item and item.isSelected():
-                        has_pickup_stops = True
+                        has_drop_stops = True
                         break
             has_pickup_racks = False
             if hasattr(self, 'rack_list'):
@@ -1226,7 +1254,7 @@ class TaskCreationWidget(QWidget):
                         has_pickup_racks = True
                         break
             has_any_pickup = has_pickup_stops or has_pickup_racks
-            task_details_filled = has_map and has_any_pickup and has_drop_zone
+            task_details_filled = has_map and has_any_pickup and has_drop_zone and has_check_stops and has_drop_stops
         elif task_type == 'storing':
             # For storing: map, from zone, to zone must be selected
             task_details_filled = (
@@ -1382,9 +1410,9 @@ class TaskCreationWidget(QWidget):
                 self.pickup_map_combo.setFocus()
                 return False
             has_pickup_stops = False
-            if hasattr(self, 'drop_stop_list'):
-                for i in range(self.drop_stop_list.count()):
-                    item = self.drop_stop_list.item(i)
+            if hasattr(self, 'pickup_stop_list'):
+                for i in range(self.pickup_stop_list.count()):
+                    item = self.pickup_stop_list.item(i)
                     if item and item.isSelected():
                         has_pickup_stops = True
                         break
@@ -1397,6 +1425,32 @@ class TaskCreationWidget(QWidget):
                         break
             if not (has_pickup_stops or has_pickup_racks):
                 QMessageBox.warning(self, "Validation Error", "Select at least one Pick Up Stop or Rack ID")
+                if hasattr(self, 'pickup_stop_list'):
+                    self.pickup_stop_list.setFocus()
+                return False
+            # Require at least one check stop
+            has_check = False
+            if hasattr(self, 'check_stop_list'):
+                for i in range(self.check_stop_list.count()):
+                    item = self.check_stop_list.item(i)
+                    if item and item.isSelected():
+                        has_check = True
+                        break
+            if not has_check:
+                QMessageBox.warning(self, "Validation Error", "Select at least one Check Stop")
+                if hasattr(self, 'check_stop_list'):
+                    self.check_stop_list.setFocus()
+                return False
+            # Require at least one drop stop
+            has_drop = False
+            if hasattr(self, 'drop_stop_list'):
+                for i in range(self.drop_stop_list.count()):
+                    item = self.drop_stop_list.item(i)
+                    if item and item.isSelected():
+                        has_drop = True
+                        break
+            if not has_drop:
+                QMessageBox.warning(self, "Validation Error", "Select at least one Drop Stop")
                 if hasattr(self, 'drop_stop_list'):
                     self.drop_stop_list.setFocus()
                 return False
@@ -1500,17 +1554,44 @@ class TaskCreationWidget(QWidget):
             # Capture selected pickup stops (multi-select list)
             selected_stops = []
             selected_stop_names = []
-            if hasattr(self, 'drop_stop_list'):
-                for i in range(self.drop_stop_list.count()):
-                    item = self.drop_stop_list.item(i)
+            if hasattr(self, 'pickup_stop_list'):
+                for i in range(self.pickup_stop_list.count()):
+                    item = self.pickup_stop_list.item(i)
                     if item and item.isSelected():
                         stop_id = item.data(Qt.UserRole)
                         if stop_id:
                             selected_stops.append(str(stop_id))
                             selected_stop_names.append(item.text())
-            task_data['stop_ids'] = ','.join(selected_stops) if selected_stops else ''
             task_data['task_details']['pickup_stops'] = selected_stops
             task_data['task_details']['pickup_stop_names'] = selected_stop_names
+
+            # Capture selected check stops
+            selected_check_stops = []
+            selected_check_names = []
+            if hasattr(self, 'check_stop_list'):
+                for i in range(self.check_stop_list.count()):
+                    item = self.check_stop_list.item(i)
+                    if item and item.isSelected():
+                        sid = item.data(Qt.UserRole)
+                        if sid:
+                            selected_check_stops.append(str(sid))
+                            selected_check_names.append(item.text())
+            task_data['task_details']['check_stops'] = selected_check_stops
+            task_data['task_details']['check_stop_names'] = selected_check_names
+
+            # Capture selected drop stops
+            selected_drop_stops = []
+            selected_drop_names = []
+            if hasattr(self, 'drop_stop_list'):
+                for i in range(self.drop_stop_list.count()):
+                    item = self.drop_stop_list.item(i)
+                    if item and item.isSelected():
+                        sid = item.data(Qt.UserRole)
+                        if sid:
+                            selected_drop_stops.append(str(sid))
+                            selected_drop_names.append(item.text())
+            task_data['task_details']['drop_stops'] = selected_drop_stops
+            task_data['task_details']['drop_stop_names'] = selected_drop_names
 
             selected_racks = []
             selected_rack_names = []
@@ -1721,8 +1802,13 @@ class TaskCreationWidget(QWidget):
 
     def on_map_selection_changed(self, index):
         """Handle pickup map selection change and populate Pick Up Stops and Drop Zone."""
-        # Clear existing pick-up stops and drop zone
-        self.drop_stop_list.clear()
+        # Clear existing pick-up/check/drop stops and drop zone
+        if hasattr(self, 'pickup_stop_list'):
+            self.pickup_stop_list.clear()
+        if hasattr(self, 'check_stop_list'):
+            self.check_stop_list.clear()
+        if hasattr(self, 'drop_stop_list'):
+            self.drop_stop_list.clear()
         if hasattr(self, 'rack_list'):
             self.rack_list.clear()
         if hasattr(self, 'drop_zone_combo'):
@@ -1740,7 +1826,22 @@ class TaskCreationWidget(QWidget):
             self.device_list.clear()
 
         if index > 0:  # A valid map is selected
+            # Resolve selected map id; some combos may store name instead of id
             selected_map_id = self.pickup_map_combo.currentData()
+            selected_map_text = self.pickup_map_combo.currentText()
+            try:
+                maps = self.csv_handler.read_csv('maps')
+            except Exception:
+                maps = []
+            # If no data value, try to find map id by matching name
+            if not selected_map_id and selected_map_text and maps:
+                for m in maps:
+                    name = (m.get('name') or '').strip()
+                    mid = (m.get('id') or '').strip()
+                    if name and name == selected_map_text and mid:
+                        selected_map_id = mid
+                        break
+            self.logger.info(f"on_map_selection_changed: index={index}, map_text='{selected_map_text}', map_id='{selected_map_id}'")
 
             try:
                 # Populate Drop Zone combo with all zones from zones.csv for this map
@@ -1794,10 +1895,41 @@ class TaskCreationWidget(QWidget):
                     if not stop_id or stop_id in added_stops:
                         continue
                     stop_name = stop_data.get('name', stop_id)
-                    item = QListWidgetItem(f"{stop_name} ({stop_id})")
-                    item.setData(Qt.UserRole, stop_id)
-                    self.drop_stop_list.addItem(item)
+                    text = f"{stop_name} ({stop_id})"
+                    if hasattr(self, 'pickup_stop_list'):
+                        it1 = QListWidgetItem(text)
+                        it1.setData(Qt.UserRole, stop_id)
+                        self.pickup_stop_list.addItem(it1)
+                    if hasattr(self, 'check_stop_list'):
+                        it2 = QListWidgetItem(text)
+                        it2.setData(Qt.UserRole, stop_id)
+                        self.check_stop_list.addItem(it2)
+                    if hasattr(self, 'drop_stop_list'):
+                        it3 = QListWidgetItem(text)
+                        it3.setData(Qt.UserRole, stop_id)
+                        self.drop_stop_list.addItem(it3)
                     added_stops.add(stop_id)
+
+                # Debug log: number of stops added
+                try:
+                    cnt = len(added_stops)
+                    self.logger.info(f"Loaded {cnt} stops for map_id={selected_map_id}")
+                except Exception:
+                    pass
+
+                # If no stops were added, show a placeholder disabled item so UI isn't empty
+                if hasattr(self, 'pickup_stop_list') and self.pickup_stop_list.count() == 0:
+                    it = QListWidgetItem("No stops found for selected map")
+                    it.setFlags(it.flags() & ~Qt.ItemIsEnabled)
+                    self.pickup_stop_list.addItem(it)
+                if hasattr(self, 'check_stop_list') and self.check_stop_list.count() == 0:
+                    it = QListWidgetItem("No stops found for selected map")
+                    it.setFlags(it.flags() & ~Qt.ItemIsEnabled)
+                    self.check_stop_list.addItem(it)
+                if hasattr(self, 'drop_stop_list') and self.drop_stop_list.count() == 0:
+                    it = QListWidgetItem("No stops found for selected map")
+                    it.setFlags(it.flags() & ~Qt.ItemIsEnabled)
+                    self.drop_stop_list.addItem(it)
 
                 if hasattr(self, 'rack_list'):
                     self.rack_list.clear()
@@ -1815,11 +1947,34 @@ class TaskCreationWidget(QWidget):
                             item.setData(Qt.UserRole, rid)
                             self.rack_list.addItem(item)
 
-                try:
-                    self.drop_stop_list.itemSelectionChanged.disconnect()
-                except Exception:
-                    pass
-                self.drop_stop_list.itemSelectionChanged.connect(self.on_stop_selection_changed)
+                        try:
+                            self.pickup_stop_list.itemSelectionChanged.disconnect()
+                        except Exception:
+                            pass
+                        try:
+                            self.check_stop_list.itemSelectionChanged.disconnect()
+                        except Exception:
+                            pass
+                        try:
+                            self.drop_stop_list.itemSelectionChanged.disconnect()
+                        except Exception:
+                            pass
+                        self.pickup_stop_list.itemSelectionChanged.connect(self.on_picking_stop_selection_changed)
+                        self.check_stop_list.itemSelectionChanged.connect(self.on_picking_stop_selection_changed)
+                        self.drop_stop_list.itemSelectionChanged.connect(self.on_picking_stop_selection_changed)
+                        # Stepwise selection: only pickup enabled initially
+                        try:
+                            self.pickup_stop_list.setEnabled(True)
+                        except Exception:
+                            pass
+                        try:
+                            self.check_stop_list.setEnabled(False)
+                        except Exception:
+                            pass
+                        try:
+                            self.drop_stop_list.setEnabled(False)
+                        except Exception:
+                            pass
             except Exception as e:
                 self.logger.error(f"Error loading zones/stops for pickup map: {e}")
 
@@ -1836,16 +1991,11 @@ class TaskCreationWidget(QWidget):
             task_type = self.task_type_combo.currentData()
             
             if task_type == 'picking':
-                # New picking semantics: just record selection and reload devices
-                selected_stops = self.get_selected_stops_from_list(self.drop_stop_list)
+                # Delegate to unified picking selection handler
+                self.on_picking_stop_selection_changed()
+                selected_stops = self.get_selected_stops_from_list(self.pickup_stop_list)
                 stop_count = len(selected_stops) if selected_stops else 0
                 self.logger.info(f"Picking stop selection changed: {stop_count} stops selected")
-
-                # Required distance for picking is approximated elsewhere; we
-                # don't recompute it per selection now, but we do refresh
-                # device suggestions when possible.
-                if hasattr(self, 'device_list') and self.device_list.isEnabled():
-                    self.load_devices()
                 return
 
             elif task_type == 'storing':
@@ -1879,6 +2029,73 @@ class TaskCreationWidget(QWidget):
         
         except Exception as e:
             self.logger.error(f"Error handling stop selection change: {e}")
+
+    def on_picking_stop_selection_changed(self):
+        """Enforce exclusivity between pickup/check/drop stop selections and refresh devices."""
+        try:
+            # Gather currently selected stop IDs in each list
+            sel_pick = set(self.get_selected_stops_from_list(self.pickup_stop_list) or [])
+            sel_check = set(self.get_selected_stops_from_list(self.check_stop_list) or [])
+            sel_drop = set(self.get_selected_stops_from_list(self.drop_stop_list) or [])
+
+            # For pickup list: hide items selected in check or drop
+            for i in range(self.pickup_stop_list.count()):
+                item = self.pickup_stop_list.item(i)
+                stop_id = item.data(Qt.UserRole)
+                if stop_id and (stop_id in sel_check or stop_id in sel_drop):
+                    # Keep visible if currently selected here
+                    item.setHidden(stop_id not in sel_pick)
+                else:
+                    item.setHidden(False)
+
+            # For check list: hide items selected in pickup or drop
+            for i in range(self.check_stop_list.count()):
+                item = self.check_stop_list.item(i)
+                stop_id = item.data(Qt.UserRole)
+                if stop_id and (stop_id in sel_pick or stop_id in sel_drop):
+                    item.setHidden(stop_id not in sel_check)
+                else:
+                    item.setHidden(False)
+
+            # For drop list: hide items selected in pickup or check
+            for i in range(self.drop_stop_list.count()):
+                item = self.drop_stop_list.item(i)
+                stop_id = item.data(Qt.UserRole)
+                if stop_id and (stop_id in sel_pick or stop_id in sel_check):
+                    item.setHidden(stop_id not in sel_drop)
+                else:
+                    item.setHidden(False)
+
+            # Stepwise enabling: enable check only after pickup chosen; enable drop only after check chosen
+            try:
+                if sel_pick:
+                    self.check_stop_list.setEnabled(True)
+                else:
+                    # No pickup selected -> disable check and drop, clear their selections
+                    self.check_stop_list.setEnabled(False)
+                    self.drop_stop_list.setEnabled(False)
+                    self.check_stop_list.clearSelection()
+                    self.drop_stop_list.clearSelection()
+
+                if sel_check:
+                    self.drop_stop_list.setEnabled(True)
+                else:
+                    if not sel_pick:
+                        self.drop_stop_list.setEnabled(False)
+                        self.drop_stop_list.clearSelection()
+                    else:
+                        # pickup chosen but no check chosen yet -> keep drop disabled
+                        self.drop_stop_list.setEnabled(False)
+                        self.drop_stop_list.clearSelection()
+            except Exception:
+                pass
+
+            # Refresh device suggestions if enabled
+            if hasattr(self, 'device_list') and self.device_list is not None and self.device_list.isEnabled():
+                self.load_devices()
+
+        except Exception as e:
+            self.logger.error(f"Error enforcing stop exclusivity: {e}")
 
 
     def populate_pickup_maps_for_storing(self):

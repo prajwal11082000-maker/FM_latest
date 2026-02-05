@@ -676,10 +676,16 @@ class AddDeviceDialog(BaseDialog):
                 QMessageBox.warning(self, "Error", "Failed to create DROP logic file")
                 return
 
+            # Create CHECK logic file
+            if not self.create_check_logic_file(device_id):
+                QMessageBox.warning(self, "Error", "Failed to create PICKUP logic file")
+                return
+
             # Create PICKUP logic file
             if not self.create_pickup_logic_file(device_id):
                 QMessageBox.warning(self, "Error", "Failed to create PICKUP logic file")
                 return
+
 
             # Add initial log entry
             if not self.add_device_log_entry(
@@ -844,6 +850,22 @@ class AddDeviceDialog(BaseDialog):
             return True
         except Exception as e:
             print(f"Error creating DROP logic file: {e}")
+            return False
+
+    def create_check_logic_file(self, device_id: str) -> bool:
+        """Create {device_id}_CHECK_Logic.csv for check zone logic commands"""
+        try:
+            file_path = Path('data/device_logs') / f"{device_id}_CHECK_Logic.csv"
+            file_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # Create empty file (no headers, user will add content directly)
+            with open(file_path, 'w', newline='', encoding='utf-8') as f:
+                pass  # Create empty file
+
+            print(f"Created CHECK logic file: {file_path}")
+            return True
+        except Exception as e:
+            print(f"Error creating CHECK logic file: {e}")
             return False
 
     def create_pickup_logic_file(self, device_id: str) -> bool:
