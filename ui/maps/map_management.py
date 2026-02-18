@@ -2314,8 +2314,16 @@ class MapManagementWidget(QWidget):
                                 if not pickup_task_file.exists():
                                     with open(pickup_task_file, 'w', newline='', encoding='utf-8') as f:
                                         writer = csv.writer(f)
-                                        writer.writerow(['stop_id', 'drop_zone', 'action'])
+                                        writer.writerow(['Pickup_stopid', 'check_stop_id', 'drop_stop_id', 'end_stop_id', 'end_zone', 'action'])
                                     self.logger.info(f"Created pickup task CSV: {pickup_task_file}")
+                                
+                                # Create charging task CSV for the new map
+                                charging_task_file = DATA_DIR / f"{new_map_id}_create_charging_task.csv"
+                                if not charging_task_file.exists():
+                                    with open(charging_task_file, 'w', newline='', encoding='utf-8') as f:
+                                        writer = csv.writer(f)
+                                        writer.writerow(['charging_zone', 'action'])
+                                    self.logger.info(f"Created charging task CSV: {charging_task_file}")
                             except Exception as csv_err:
                                 self.logger.error(f"Failed to create pickup task CSV: {csv_err}")
 
@@ -2341,10 +2349,18 @@ class MapManagementWidget(QWidget):
                         if not pickup_task_file.exists():
                             with open(pickup_task_file, 'w', newline='', encoding='utf-8') as f:
                                 writer = csv.writer(f)
-                                writer.writerow(['stop_id', 'drop_zone', 'action'])
+                                writer.writerow(['Pickup_stopid', 'check_stop_id', 'drop_stop_id', 'end_stop_id', 'end_zone', 'action'])
                             self.logger.info(f"Created pickup task CSV: {pickup_task_file}")
+                        
+                        # Create charging task CSV for the new map
+                        charging_task_file = DATA_DIR / f"{map_data['id']}_create_charging_task.csv"
+                        if not charging_task_file.exists():
+                            with open(charging_task_file, 'w', newline='', encoding='utf-8') as f:
+                                writer = csv.writer(f)
+                                writer.writerow(['device_id', 'charging_zone', 'action'])
+                            self.logger.info(f"Created charging task CSV: {charging_task_file}")
                     except Exception as csv_err:
-                        self.logger.error(f"Failed to create pickup task CSV: {csv_err}")
+                        self.logger.error(f"Failed to create pickup/charging task CSV: {csv_err}")
 
                     # Navigate to zone management tab for new map
                     self.tab_widget.setCurrentIndex(1)  # Zone Management tab

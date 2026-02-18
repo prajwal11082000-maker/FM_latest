@@ -168,7 +168,8 @@ class ChargingTaskHandler(TaskTypeHandler):
         return 0.0
     
     def validate_task_details(self, map_id: Optional[str] = None, 
-                              station_id: Optional[str] = None, **kwargs) -> Tuple[bool, Optional[str]]:
+                              station_id: Optional[str] = None,
+                              **kwargs) -> Tuple[bool, Optional[str]]:
         """Validate charging task details"""
         if not map_id:
             return False, "Charging map is required"

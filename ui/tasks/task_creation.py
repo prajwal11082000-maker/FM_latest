@@ -317,14 +317,41 @@ class TaskCreationWidget(QWidget):
         """)
         layout.addRow("Rack IDs:", self.rack_list)
 
-        # Drop Zone dropdown (single-select of all zones in the pickup map)
+        # Check Stop (single-select)
+        self.check_stop_combo = QComboBox()
+        self.check_stop_combo.setMinimumHeight(35)
+        self.check_stop_combo.addItem("Select Check Stop", "")
+        self.check_stop_combo.setEnabled(False)
+        self.check_stop_combo.currentIndexChanged.connect(self.check_form_completion)
+        self.apply_combo_style(self.check_stop_combo)
+        layout.addRow("Check Stop *:", self.check_stop_combo)
+
+        # Drop Stop (single-select)
+        self.drop_stop_combo = QComboBox()
+        self.drop_stop_combo.setMinimumHeight(35)
+        self.drop_stop_combo.addItem("Select Drop Stop", "")
+        self.drop_stop_combo.setEnabled(False)
+        self.drop_stop_combo.currentIndexChanged.connect(self.check_form_completion)
+        self.apply_combo_style(self.drop_stop_combo)
+        layout.addRow("Drop Stop *:", self.drop_stop_combo)
+
+        # End Stop (single-select)
+        self.end_stop_combo = QComboBox()
+        self.end_stop_combo.setMinimumHeight(35)
+        self.end_stop_combo.addItem("Select End Stop", "")
+        self.end_stop_combo.setEnabled(False)
+        self.end_stop_combo.currentIndexChanged.connect(self.check_form_completion)
+        self.apply_combo_style(self.end_stop_combo)
+        layout.addRow("End Stop *:", self.end_stop_combo)
+
+        # End Zone dropdown (single-select of all zones in the pickup map; formerly Drop Zone)
         self.drop_zone_combo = QComboBox()
         self.drop_zone_combo.setMinimumHeight(35)
-        self.drop_zone_combo.addItem("Select Drop Zone", "")
+        self.drop_zone_combo.addItem("Select End Zone", "")
         self.drop_zone_combo.setEnabled(False)
         self.drop_zone_combo.currentIndexChanged.connect(self.check_form_completion)
         self.apply_combo_style(self.drop_zone_combo)
-        layout.addRow("Drop Zone *:", self.drop_zone_combo)
+        layout.addRow("End Zone *:", self.drop_zone_combo)
 
         # Upload CSV file button
         upload_layout = QHBoxLayout()
@@ -553,7 +580,7 @@ class TaskCreationWidget(QWidget):
             self.logger.error(f"Error loading maps: {e}")
 
     def on_charging_map_changed(self):
-        """Handle charging map selection and populate stations"""
+        """Handle charging map selection and populate stations and end zone"""
         map_id = self.charging_map_combo.currentData()
         self.charging_station_combo.clear()
         self.charging_station_combo.addItem("Select Charging Station", "")
@@ -1208,9 +1235,9 @@ class TaskCreationWidget(QWidget):
         task_type = self.task_type_combo.currentData()
         
         if task_type == 'picking':
-            # For picking: map, at least one pickup stop, and drop zone must be selected
+            # For picking: map, at least one pickup stop, check/drop/end stops, and end zone must be selected
             has_map = hasattr(self, 'pickup_map_combo') and self.pickup_map_combo.currentIndex() > 0
-            has_drop_zone = hasattr(self, 'drop_zone_combo') and self.drop_zone_combo.currentIndex() > 0
+            has_end_zone = hasattr(self, 'drop_zone_combo') and self.drop_zone_combo.currentIndex() > 0
             has_pickup_stops = False
             if hasattr(self, 'drop_stop_list'):
                 for i in range(self.drop_stop_list.count()):
@@ -1226,7 +1253,10 @@ class TaskCreationWidget(QWidget):
                         has_pickup_racks = True
                         break
             has_any_pickup = has_pickup_stops or has_pickup_racks
-            task_details_filled = has_map and has_any_pickup and has_drop_zone
+            has_check_stop = hasattr(self, 'check_stop_combo') and self.check_stop_combo.currentIndex() > 0
+            has_drop_stop = hasattr(self, 'drop_stop_combo') and self.drop_stop_combo.currentIndex() > 0
+            has_end_stop = hasattr(self, 'end_stop_combo') and self.end_stop_combo.currentIndex() > 0
+            task_details_filled = has_map and has_any_pickup and has_check_stop and has_drop_stop and has_end_stop and has_end_zone
         elif task_type == 'storing':
             # For storing: map, from zone, to zone must be selected
             task_details_filled = (
@@ -1286,7 +1316,7 @@ class TaskCreationWidget(QWidget):
                     if task_type == 'auditing':
                         missing_steps.append("Auditing Map")
                     elif task_type == 'picking':
-                        missing_steps.append("Pickup Map, Pick Up Stops/Rack IDs, Drop Zone")
+                        missing_steps.append("Pickup Map, Pick Up Stops/Rack IDs, Check/Drop/End Stops, End Zone")
                     elif task_type == 'charging':
                         missing_steps.append("Charging Map, Charging Station")
                     else:
@@ -1400,9 +1430,20 @@ class TaskCreationWidget(QWidget):
                 if hasattr(self, 'drop_stop_list'):
                     self.drop_stop_list.setFocus()
                 return False
-            # Single drop zone
+            if hasattr(self, 'check_stop_combo') and not self.check_stop_combo.currentData():
+                QMessageBox.warning(self, "Validation Error", "Check Stop is required")
+                self.check_stop_combo.setFocus()
+                return False
+            if hasattr(self, 'drop_stop_combo') and not self.drop_stop_combo.currentData():
+                QMessageBox.warning(self, "Validation Error", "Drop Stop is required")
+                self.drop_stop_combo.setFocus()
+                return False
+            if hasattr(self, 'end_stop_combo') and not self.end_stop_combo.currentData():
+                QMessageBox.warning(self, "Validation Error", "End Stop is required")
+                self.end_stop_combo.setFocus()
+                return False
             if not self.drop_zone_combo.currentData():
-                QMessageBox.warning(self, "Validation Error", "Drop Zone is required")
+                QMessageBox.warning(self, "Validation Error", "End Zone is required")
                 self.drop_zone_combo.setFocus()
                 return False
 
@@ -1434,6 +1475,10 @@ class TaskCreationWidget(QWidget):
             if not self.charging_station_combo.currentData():
                 QMessageBox.warning(self, "Validation Error", "Charging station is required")
                 self.charging_station_combo.setFocus()
+                return False
+            if hasattr(self, 'charging_end_zone_combo') and not self.charging_end_zone_combo.currentData():
+                QMessageBox.warning(self, "Validation Error", "End Zone is required for charging task")
+                self.charging_end_zone_combo.setFocus()
                 return False
 
         return True
@@ -1525,13 +1570,22 @@ class TaskCreationWidget(QWidget):
             task_data['task_details']['pickup_racks'] = selected_racks
             task_data['task_details']['pickup_rack_names'] = selected_rack_names
 
-            # Capture Drop Zone (single-select)
+            # Capture End Zone (single-select; stored as drop_zone for backward compat and end_zone)
             drop_zone_id = self.drop_zone_combo.currentData() if hasattr(self, 'drop_zone_combo') else ''
             drop_zone_name = self.drop_zone_combo.currentText() if hasattr(self, 'drop_zone_combo') else ''
             if drop_zone_id:
                 task_data['task_details']['drop_zone'] = str(drop_zone_id)
+                task_data['task_details']['end_zone'] = str(drop_zone_id)
             if drop_zone_name:
                 task_data['task_details']['drop_zone_name'] = drop_zone_name
+                task_data['task_details']['end_zone_name'] = drop_zone_name
+            # Check / Drop / End stops (single-select)
+            if hasattr(self, 'check_stop_combo') and self.check_stop_combo.currentData():
+                task_data['task_details']['check_stop_id'] = str(self.check_stop_combo.currentData())
+            if hasattr(self, 'drop_stop_combo') and self.drop_stop_combo.currentData():
+                task_data['task_details']['drop_stop_id'] = str(self.drop_stop_combo.currentData())
+            if hasattr(self, 'end_stop_combo') and self.end_stop_combo.currentData():
+                task_data['task_details']['end_stop_id'] = str(self.end_stop_combo.currentData())
         
         elif task_type == 'charging':
             # Add charging-specific data
@@ -1727,8 +1781,14 @@ class TaskCreationWidget(QWidget):
             self.rack_list.clear()
         if hasattr(self, 'drop_zone_combo'):
             self.drop_zone_combo.clear()
-            self.drop_zone_combo.addItem("Select Drop Zone", "")
+            self.drop_zone_combo.addItem("Select End Zone", "")
             self.drop_zone_combo.setEnabled(False)
+        for combo_attr in ('check_stop_combo', 'drop_stop_combo', 'end_stop_combo'):
+            if hasattr(self, combo_attr):
+                combo = getattr(self, combo_attr)
+                combo.clear()
+                combo.addItem(f"Select {combo_attr.replace('_combo', '').replace('_', ' ').title()}", "")
+                combo.setEnabled(False)
 
         # Reset distance calculations
         self.current_map_distance = 0
@@ -1764,6 +1824,7 @@ class TaskCreationWidget(QWidget):
                     self.drop_zone_combo.addItem(zone, zone)
                 self.drop_zone_combo.setEnabled(True)
 
+                # Populate Check / Drop / End stop combos with same stops
                 stops = self.csv_handler.read_csv('stops')
                 racks = self.csv_handler.read_csv('racks')
                 maps = self.csv_handler.read_csv('maps')
@@ -1798,6 +1859,15 @@ class TaskCreationWidget(QWidget):
                     item.setData(Qt.UserRole, stop_id)
                     self.drop_stop_list.addItem(item)
                     added_stops.add(stop_id)
+                    # Populate check/drop/end stop combos (same stops as list)
+                    if hasattr(self, 'check_stop_combo'):
+                        self.check_stop_combo.addItem(f"{stop_name} ({stop_id})", stop_id)
+                        self.drop_stop_combo.addItem(f"{stop_name} ({stop_id})", stop_id)
+                        self.end_stop_combo.addItem(f"{stop_name} ({stop_id})", stop_id)
+                if hasattr(self, 'check_stop_combo'):
+                    self.check_stop_combo.setEnabled(True)
+                    self.drop_stop_combo.setEnabled(True)
+                    self.end_stop_combo.setEnabled(True)
 
                 if hasattr(self, 'rack_list'):
                     self.rack_list.clear()

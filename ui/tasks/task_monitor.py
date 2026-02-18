@@ -788,6 +788,10 @@ class TaskMonitorWidget(QWidget):
         pickup_stops: list[str] = []
         pickup_racks: list[str] = []
         drop_zone: str | None = None
+        check_stop_id: str | None = None
+        drop_stop_id: str | None = None
+        end_stop_id: str | None = None
+        end_zone: str | None = None
 
         raw = task.get('task_details') or ''
         try:
@@ -840,8 +844,14 @@ class TaskMonitorWidget(QWidget):
         dz = details.get('drop_zone') or details.get('drop_zone_id')
         if dz is not None and str(dz).strip():
             drop_zone = str(dz).strip()
+        
+        # Extract 4-stop format fields
+        check_stop_id = str(details.get('check_stop_id') or '').strip() or None
+        drop_stop_id = str(details.get('drop_stop_id') or '').strip() or None
+        end_stop_id = str(details.get('end_stop_id') or '').strip() or None
+        end_zone = str(details.get('end_zone') or '').strip() or drop_zone
 
-        return map_id, from_zone, to_zone, zone_path, pickup_stops, pickup_racks, drop_zone
+        return map_id, from_zone, to_zone, zone_path, pickup_stops, pickup_racks, drop_zone, check_stop_id, drop_stop_id, end_stop_id, end_zone
 
     def generate_path_planning_for_selected_task(self):
         """Generate and write path commands for the selected task/device."""
@@ -869,6 +879,10 @@ class TaskMonitorWidget(QWidget):
                 pickup_stops,
                 pickup_racks,
                 drop_zone,
+                check_stop_id,
+                drop_stop_id,
+                end_stop_id,
+                end_zone,
             ) = self._parse_task_map_and_path(self.selected_task)
 
             if not map_id:
@@ -891,28 +905,52 @@ class TaskMonitorWidget(QWidget):
                     zone_sequence = self._build_full_map_sequence(map_id, start_zone)
                 else:
                     if task_type == 'picking' and (pickup_stops or pickup_racks) and drop_zone:
+                        # Check if this is a 4-stop format task
+                        if check_stop_id and drop_stop_id and end_stop_id and end_zone and pickup_stops:
+                            # Use 4-stop path planner
+                            from services.path_planner_service import plan_and_write_picking_path_4stops
+                            try:
+                                pickup_stop_id = pickup_stops[0] if pickup_stops else None
+                                if not pickup_stop_id:
+                                    QMessageBox.critical(self, "Error", "Pickup stop is required for 4-stop path")
+                                    return
+                                out_path = plan_and_write_picking_path_4stops(
+                                    device_id=device_id,
+                                    map_id=str(map_id),
+                                    pickup_stop_id=pickup_stop_id,
+                                    check_stop_id=check_stop_id,
+                                    drop_stop_id=drop_stop_id,
+                                    end_stop_id=end_stop_id,
+                                    end_zone=str(end_zone)
+                                )
+                                results.append(f"{device_id}: {out_path}")
+                            except Exception as e:
+                                self.logger.error(f"Failed to generate 4-stop picking path: {e}")
+                                QMessageBox.critical(self, "Error", f"Failed to generate 4-stop picking path: {e}")
+                                return
+                            continue
+                        else:
+                            # Round-trip picking: for each stop, generate path:
+                            # current position -> stop edge (PICKUP only for that stop) -> drop zone (DROP)
+                            # Then repeat for next stop starting from drop zone.
+                            
+                            # Import needed function
+                            from services.path_planner_service import plan_and_write_picking_path
 
-                        # Round-trip picking: for each stop, generate path:
-                        # current position -> stop edge (PICKUP only for that stop) -> drop zone (DROP)
-                        # Then repeat for next stop starting from drop zone.
-                        
-                        # Import needed function
-                        from services.path_planner_service import plan_and_write_picking_path
-
-                        try:
-                            out_path = plan_and_write_picking_path(
-                                device_id=device_id,
-                                map_id=str(map_id),
-                                pickup_stops=pickup_stops,
-                                pickup_racks=pickup_racks,
-                                drop_zone=str(drop_zone)
-                            )
-                            results.append(f"{device_id}: {out_path}")
-                        except Exception as e:
-                            self.logger.error(f"Failed to generate picking path: {e}")
-                            QMessageBox.critical(self, "Error", f"Failed to generate picking path: {e}")
-                            return
-                        continue  # Skip the standard plan_and_write_path call below
+                            try:
+                                out_path = plan_and_write_picking_path(
+                                    device_id=device_id,
+                                    map_id=str(map_id),
+                                    pickup_stops=pickup_stops,
+                                    pickup_racks=pickup_racks,
+                                    drop_zone=str(drop_zone)
+                                )
+                                results.append(f"{device_id}: {out_path}")
+                            except Exception as e:
+                                self.logger.error(f"Failed to generate picking path: {e}")
+                                QMessageBox.critical(self, "Error", f"Failed to generate picking path: {e}")
+                                return
+                            continue  # Skip the standard plan_and_write_path call below
 
                     else:
                         # Legacy/other task types: storing, old picking without drop_zone, charging

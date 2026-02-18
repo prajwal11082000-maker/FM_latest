@@ -515,7 +515,7 @@ class DeviceDataHandler:
             self.logger.error(f"Error resolving device id for {assigned_device_ref}: {e}")
             return None
 
-    def append_task_to_device(self, device_id: str, task_id: str, task_status: str = 'task_pending') -> bool:
+    def append_task_to_device(self, device_id: str, task_id: str, task_status: str = 'pending_task') -> bool:
         """Append a task entry to '<device_id>_task.csv', creating the file if needed."""
         try:
             if not device_id:
@@ -540,7 +540,7 @@ class DeviceDataHandler:
             if not device_id_str:
                 self.logger.warning(f"Could not resolve device_id string for assigned_device_id={assigned_device_id}; skipping device task update for task {task_id}")
                 return False
-            return self.append_task_to_device(device_id_str, task_id, 'task_pending')
+            return self.append_task_to_device(device_id_str, task_id, 'pending_task')
         except Exception as e:
             self.logger.error(f"Error updating device task file for task {task_id} (assigned_device_id={assigned_device_id}): {e}")
             return False

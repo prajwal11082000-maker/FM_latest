@@ -164,6 +164,8 @@ def generate_leg_commands(
     drop_zone: Optional[str] = None,
     forward_speed: Optional[int] = None,
     turning_speed: Optional[int] = None,
+    stop_call_map: Optional[Dict[str, str]] = None,
+    suppress_default_calls: bool = False,
 ) -> Tuple[List[Tuple], str]:
     """
     Generate path commands for a single leg without writing to file.
@@ -211,6 +213,8 @@ def generate_leg_commands(
         zone_alignment=zone_alignment,
         selected_racks_by_stop=None,
         drop_zone=drop_zone,
+        stop_call_map=stop_call_map,
+        suppress_default_calls=suppress_default_calls,
     )
 
     # Determine final direction from last edge if possible
@@ -381,6 +385,25 @@ def plan_and_write_path(
 
     if task_type and str(task_type).lower() == 'charging':
         cmds.append(('CALL', 'CHARGING'))
+        # After charging, call END at end zone if drop_zone is specified
+        if drop_zone:
+            # Find if we're already at drop_zone or need to move there
+            if zone_sequence and zone_sequence[-1][1] == drop_zone:
+                cmds.append(('CALL', 'END'))
+            elif zone_sequence:
+                # Add movement to end zone and then END
+                last_zone = zone_sequence[-1][1]
+                if last_zone != drop_zone:
+                    # Add path to end zone
+                    end_cmds, _ = generate_leg_commands(
+                        device_id=device_id,
+                        map_id=map_id,
+                        zone_sequence=[(last_zone, drop_zone)],
+                        initial_direction=initial_direction,
+                        task_type='charging',
+                    )
+                    cmds.extend(end_cmds)
+                cmds.append(('CALL', 'END'))
 
     rows = serialize_commands_to_csv_rows(cmds, device_id, task_type=task_type)
 
@@ -507,13 +530,136 @@ def plan_and_write_picking_path(
     return out_path
 
 
-if __name__ == "__main__":
-    # Simple manual smoke test using the example described by the user (map_id 13)
-    device = "DEV001"
-    path = plan_and_write_path(
-        device_id=device,
-        map_id="13",
-        zone_sequence=[("1","2"),("2","4"),("4","2"),("2","3"),("3","2"),("2","1")],
-        initial_direction="north",
+def _stop_to_zone_edge(stops_rows: List[Dict], zones_rows: List[Dict], map_id: str, stop_id: str) -> Optional[Tuple[str, str]]:
+    """Return (from_zone, to_zone) for the edge that contains the given stop, or None."""
+    s_row = next((r for r in stops_rows if str(r.get('stop_id')) == str(stop_id) and str(r.get('map_id')) == str(map_id)), None)
+    if not s_row:
+        return None
+    conn_id = str(s_row.get('zone_connection_id') or '').strip()
+    if not conn_id:
+        return None
+    z_row = next((z for z in zones_rows if str(z.get('id')) == conn_id and str(z.get('map_id')) == str(map_id)), None)
+    if not z_row:
+        return None
+    return (str(z_row.get('from_zone')), str(z_row.get('to_zone')))
+
+
+def plan_and_write_picking_path_4stops(
+    device_id: str,
+    map_id: str,
+    pickup_stop_id: str,
+    check_stop_id: str,
+    drop_stop_id: str,
+    end_stop_id: str,
+    end_zone: str,
+    initial_direction: str = 'north',
+    current_zone: Optional[str] = None,
+) -> str:
+    """
+    Generate and write path for 4-stop picking: Pickup -> Check -> Drop -> End.
+    At each stop injects CALL PICKUP, CALL CHECK, CALL DROP, CALL END respectively.
+    Label logic is loaded from device_id_*_Logic.csv files when serializing.
+    """
+    zones_rows = _read_csv(ZONES_CSV)
+    stops_rows = _read_csv(STOPS_CSV)
+
+    # Derive current/start zone
+    start_zone = str(current_zone) if current_zone else None
+    if not start_zone:
+        state = _read_latest_device_state(device_id)
+        start_zone = (state or {}).get('current_location')
+    if not start_zone:
+        zone_ids = set()
+        for z in zones_rows:
+            if str(z.get('map_id')) == str(map_id):
+                zone_ids.add(str(z.get('from_zone')))
+                zone_ids.add(str(z.get('to_zone')))
+        zone_ids = {z for z in zone_ids if z}
+
+        def _zk(z):
+            s = str(z)
+            return (0, int(s)) if s.isdigit() else (1, s)
+
+        start_zone = sorted(zone_ids, key=_zk)[0] if zone_ids else None
+
+    if not start_zone:
+        raise ValueError("Could not derive device start zone for 4-stop picking.")
+
+    # Resolve each stop_id to its edge (from_zone,to_zone)
+    pickup_edge = _stop_to_zone_edge(stops_rows, zones_rows, map_id, pickup_stop_id)
+    check_edge = _stop_to_zone_edge(stops_rows, zones_rows, map_id, check_stop_id)
+    drop_edge = _stop_to_zone_edge(stops_rows, zones_rows, map_id, drop_stop_id)
+    end_edge = _stop_to_zone_edge(stops_rows, zones_rows, map_id, end_stop_id)
+
+    if not (pickup_edge and check_edge and drop_edge and end_edge):
+        raise ValueError(
+            f"Could not resolve stop edges for 4-stop picking. "
+            f"pickup={pickup_edge}, check={check_edge}, drop={drop_edge}, end={end_edge}"
+        )
+
+    # Build ordered edges list, collapsing consecutive duplicates.
+    edges_ordered: List[Tuple[str, str]] = [
+        (str(pickup_edge[0]), str(pickup_edge[1])),
+        (str(check_edge[0]), str(check_edge[1])),
+        (str(drop_edge[0]), str(drop_edge[1])),
+        (str(end_edge[0]), str(end_edge[1])),
+    ]
+    collapsed_edges: List[Tuple[str, str]] = []
+    for e in edges_ordered:
+        if not collapsed_edges or collapsed_edges[-1] != e:
+            collapsed_edges.append(e)
+
+    # Build a chained zone sequence: start -> first.from, then traverse each edge,
+    # inserting connectors between edges when needed, finally -> end_zone.
+    seq: List[Tuple[str, str]] = []
+
+    def _add_leg(a: str, b: str):
+        if a and b and str(a) != str(b):
+            seq.append((str(a), str(b)))
+
+    first_fz = collapsed_edges[0][0]
+    _add_leg(start_zone, first_fz)
+
+    prev_to = None
+    for fz, tz in collapsed_edges:
+        if prev_to is not None:
+            _add_leg(prev_to, fz)
+        _add_leg(fz, tz)
+        prev_to = tz
+
+    if prev_to is not None:
+        _add_leg(prev_to, str(end_zone))
+
+    stop_call_map = {
+        str(pickup_stop_id): "PICKUP",
+        str(check_stop_id): "CHECK",
+        str(drop_stop_id): "DROP",
+        str(end_stop_id): "END",
+    }
+
+    # IMPORTANT: Filter stops to only the 4 selected ones, so no other stop logic is injected.
+    selected_stop_ids = [pickup_stop_id, check_stop_id, drop_stop_id, end_stop_id]
+
+    cmds, _last_dir = generate_leg_commands(
+        device_id=device_id,
+        map_id=str(map_id),
+        zone_sequence=seq,
+        initial_direction=str(initial_direction).lower(),
+        task_type="picking",
+        selected_stop_ids=selected_stop_ids,
+        drop_zone=None,
+        # New params in generate_leg_commands / generate_path_commands
+        stop_call_map=stop_call_map,
+        suppress_default_calls=True,
     )
 
+    rows = serialize_commands_to_csv_rows(cmds, device_id, task_type="picking", use_four_stops=True)
+    out_path = os.path.join(DEVICE_LOGS_DIR, f"path_{device_id}.csv")
+    write_commands_csv(out_path, rows)
+    return out_path
+
+
+if __name__ == "__main__":
+    # Manual smoke tests can be added here when running this module directly.
+    # Currently no automatic test is executed.
+    pass

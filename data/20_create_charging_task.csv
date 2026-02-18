@@ -1,0 +1,5 @@
+device_id,charging_zone,action
+,6,create_task
+rob1,6,task_created
+rob1,6,task_created
+rob1,6,task_created

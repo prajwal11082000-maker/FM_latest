@@ -244,6 +244,8 @@ def generate_edge_commands(
     task_type: Optional[str] = None,
     vertical_speed: Optional[int] = None,
     selected_racks_by_stop: Optional[Dict[str, List[Tuple[str, float]]]] = None,
+    stop_call_map: Optional[Dict[str, str]] = None,
+    suppress_default_calls: bool = False,
 ) -> Tuple[List[Tuple[Any, ...]], Direction]:
     """
     Generate commands to traverse a single edge from current offset to end, visiting stops.
@@ -288,6 +290,18 @@ def generate_edge_commands(
         if task_type:
             tt = str(task_type).lower()
             if tt == 'picking':
+                # 4-stop picking: if a stop_call_map is provided, call mapped label at that stop_id
+                # and suppress any default PICKUP behavior.
+                if stop_call_map is not None:
+                    stop_id_val = str(getattr(stop, 'stop_id', '') or '').strip()
+                    mapped = stop_call_map.get(stop_id_val) if stop_id_val else None
+                    if mapped:
+                        commands.append(('CALL', str(mapped).strip().upper()))
+                    # When using stop_call_map we do not execute rack logic here.
+                    continue
+                if suppress_default_calls:
+                    continue
+
                 stop_key = getattr(stop, 'stop_id', '') or ''
                 per_stop_racks: List[Tuple[str, float]] = []
                 try:
@@ -345,6 +359,8 @@ def generate_path_commands(
     zone_alignment: Optional[Dict[str, str]] = None,
     selected_racks_by_stop: Optional[Dict[str, List[Tuple[str, float]]]] = None,
     drop_zone: Optional[str] = None,
+    stop_call_map: Optional[Dict[str, str]] = None,
+    suppress_default_calls: bool = False,
 ) -> List[Tuple[Any, ...]]:
     # Helper to choose ALIGN variant based on per-zone alignment settings.
     def _align_cmd(zone: ZoneId) -> Tuple[str, str, str, str]:
@@ -405,6 +421,8 @@ def generate_path_commands(
                     task_type=task_type,
                     vertical_speed=vertical_speed,
                     selected_racks_by_stop=selected_racks_by_stop,
+                    stop_call_map=stop_call_map,
+                    suppress_default_calls=suppress_default_calls,
                 )
                 cmds.extend(seg_cmds)
                 last_arrival_zone = sub_edge.to_zone
@@ -425,6 +443,8 @@ def generate_path_commands(
                 task_type=task_type,
                 vertical_speed=vertical_speed,
                 selected_racks_by_stop=selected_racks_by_stop,
+                stop_call_map=stop_call_map,
+                suppress_default_calls=suppress_default_calls,
             )
             cmds.extend(seg_cmds)
             offset_m_for_first_edge = 0.0
@@ -433,7 +453,12 @@ def generate_path_commands(
                 if i < len(zone_sequence) - 1:
                     cmds.append(_align_cmd(edge.to_zone))
                 # For picking tasks with drop_zone, add ALIGN then CALL,DROP when arriving at drop zone
-                if task_type and str(task_type).lower() == 'picking' and drop_zone:
+                # (skip when using custom stop_call_map / suppress_default_calls)
+                if (
+                    task_type and str(task_type).lower() == 'picking' and drop_zone
+                    and not suppress_default_calls
+                    and stop_call_map is None
+                ):
                     if str(edge.to_zone) == str(drop_zone):
                         # Ensure ALIGN is added before DROP if not already
                         if i >= len(zone_sequence) - 1:  # Last edge - need to add ALIGN first
@@ -446,16 +471,23 @@ def generate_path_commands(
     # Skip for picking tasks with drop_zone - ALIGN was already added before DROP
     if last_arrival_zone is not None:
         try:
-            # For picking with drop_zone, skip final ALIGN (already added before DROP)
-            if task_type and str(task_type).lower() == 'picking' and drop_zone:
-                pass  # ALIGN already added with DROP
+            # For picking with drop_zone, skip final ALIGN (already added before DROP).
+            # For custom picking (stop_call_map / suppress_default_calls), also skip final ALIGN
+            # so the script ends right after the last CALL.
+            if task_type and str(task_type).lower() == 'picking' and (drop_zone or suppress_default_calls or stop_call_map is not None):
+                pass
             else:
                 cmds.append(_align_cmd(last_arrival_zone))
             
             # For picking tasks without drop_zone, add legacy DROP at end
-            if task_type and str(task_type).lower() == 'picking':
-                if not drop_zone:
-                    cmds.append(('CALL', 'DROP'))
+            # (skip when using custom stop_call_map / suppress_default_calls)
+            if (
+                task_type and str(task_type).lower() == 'picking'
+                and not drop_zone
+                and not suppress_default_calls
+                and stop_call_map is None
+            ):
+                cmds.append(('CALL', 'DROP'))
         except Exception:
             pass
 
@@ -529,7 +561,32 @@ def generate_path_commands(
     return aug_cmds
 
 
-def serialize_commands_to_csv_rows(cmds: List[Tuple[Any, ...]], device_id: Optional[str] = None, task_type: Optional[str] = None) -> List[List[str]]:
+def _load_label_logic_rows(device_id: str, suffix: str) -> List[List[str]]:
+    """Load label logic from data/device_logs/{device_id}_{suffix}.csv. Returns list of row lists."""
+    out: List[List[str]] = []
+    if not device_id:
+        return out
+    base = os.path.dirname(os.path.dirname(__file__))
+    path = os.path.join(base, "data", "device_logs", f"{device_id}_{suffix}")
+    if not os.path.exists(path):
+        return out
+    try:
+        with open(path, 'r', newline='', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    out.append([x.strip() for x in line.split(',')])
+    except Exception:
+        pass
+    return out
+
+
+def serialize_commands_to_csv_rows(
+    cmds: List[Tuple[Any, ...]],
+    device_id: Optional[str] = None,
+    task_type: Optional[str] = None,
+    use_four_stops: bool = False,
+) -> List[List[str]]:
     rows: List[List[str]] = [["command", "value", "unit"]]
     # Ensure first command row is HOMING,ALL as requested
     rows.append(["HOMING", "ALL"])
@@ -549,49 +606,45 @@ def serialize_commands_to_csv_rows(cmds: List[Tuple[Any, ...]], device_id: Optio
 
     if tt == 'charging':
         rows.append(["LABEL", "CHARGING"])
+        if device_id:
+            for r in _load_label_logic_rows(device_id, "CHARGING_logic.csv"):
+                rows.append(r)
+        rows.append(["RETURN"])
+        rows.append([])
+        rows.append(["LABEL", "END"])
+        if device_id:
+            for r in _load_label_logic_rows(device_id, "END_Logic.csv"):
+                rows.append(r)
         rows.append(["RETURN"])
         return rows
 
+    if use_four_stops:
+        # Picking with 4 stops: PICKUP -> CHECK -> DROP -> END (each with device logic CSV)
+        for label_name, csv_suffix in [
+            ("PICKUP", "PICKUP_Logic.csv"),
+            ("CHECK", "CHECK_Logic.csv"),
+            ("DROP", "DROP_Logic.csv"),
+            ("END", "END_Logic.csv"),
+        ]:
+            rows.append(["LABEL", label_name])
+            if device_id:
+                for r in _load_label_logic_rows(device_id, csv_suffix):
+                    rows.append(r)
+            rows.append(["RETURN"])
+            rows.append([])
+        return rows
+
     rows.append(["LABEL", "PICKUP"])
-
     if device_id:
-        pickup_logic_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)),
-            "data", "device_logs", f"{device_id}_PICKUP_Logic.csv"
-        )
-        if os.path.exists(pickup_logic_path):
-            try:
-                with open(pickup_logic_path, 'r', newline='', encoding='utf-8') as f:
-                    for line in f:
-                        line = line.strip()
-                        if line:
-                            rows.append(line.split(','))
-            except Exception:
-                pass
-
+        for r in _load_label_logic_rows(device_id, "PICKUP_Logic.csv"):
+            rows.append(r)
     rows.append(["RETURN"])
     rows.append([])  # Blank line
     rows.append(["LABEL", "DROP"])
-    
-    # Insert content from {device_id}_DROP_Logic.csv if it exists
     if device_id:
-        drop_logic_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)),
-            "data", "device_logs", f"{device_id}_DROP_Logic.csv"
-        )
-        if os.path.exists(drop_logic_path):
-            try:
-                with open(drop_logic_path, 'r', newline='', encoding='utf-8') as f:
-                    for line in f:
-                        line = line.strip()
-                        if line:  # Skip empty lines
-                            # Split by comma to create a row
-                            rows.append(line.split(','))
-            except Exception:
-                pass  # If file read fails, just skip
-    
+        for r in _load_label_logic_rows(device_id, "DROP_Logic.csv"):
+            rows.append(r)
     rows.append(["RETURN"])
-    
     return rows
 
 

@@ -92,8 +92,8 @@ class DeviceFilter:
                     
                     basic_selectable = battery_eligible and status_eligible and not is_busy
                 else:
-                    # Original logic for other tasks: battery > 20% and status working/charging
-                    basic_selectable = battery > 20 and status in ['working', 'charging']
+                    # Original logic for other tasks: battery > 30% and status working/charging
+                    basic_selectable = battery > 30 and status in ['working', 'charging']
                 
                 # Check distance requirements
                 distance_selectable = True
